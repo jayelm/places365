@@ -128,6 +128,8 @@ def main():
     else:
         model = models.__dict__[args.arch](num_classes=args.num_classes)
 
+    os.makedirs(os.path.join('models', args.arch.lower()), exist_ok=True)
+
     if args.arch.lower().startswith("alexnet") or args.arch.lower().startswith("vgg"):
         model.features = torch.nn.DataParallel(model.features)
         model.cuda()
@@ -231,7 +233,8 @@ def main():
                 "best_prec1": best_prec1,
             },
             is_best,
-            args.arch.lower(),
+            os.path.join(models, args.arch.lower(), args.arch.lower()),
+            epoch=epoch
         )
 
 
@@ -348,10 +351,12 @@ def validate(val_loader, model, criterion):
     return top1.avg
 
 
-def save_checkpoint(state, is_best, filename="checkpoint.pth.tar"):
+def save_checkpoint(state, is_best, filename="checkpoint.pth.tar", epoch=None):
     torch.save(state, filename + "_latest.pth.tar")
     if is_best:
         shutil.copyfile(filename + "_latest.pth.tar", filename + "_best.pth.tar")
+    if epoch is not None:
+        shutil.copyfile(filename + "_latest.pth.tar", filename + f"_{epoch}.pth.tar")
 
 
 class AverageMeter(object):
